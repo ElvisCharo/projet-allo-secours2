@@ -12,7 +12,6 @@ class Loginpage extends StatefulWidget {
 
 class _LoginpageState extends State<Loginpage> {
   bool _dialogShown = false;
-  String _permissionStatus = 'Non déterminé';
 
   @override
   void initState() {
@@ -39,9 +38,6 @@ class _LoginpageState extends State<Loginpage> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                setState(() {
-                  _permissionStatus = 'Non merci';
-                });
               },
               child: const Text('Non merci'),
             ),
@@ -74,9 +70,7 @@ class _LoginpageState extends State<Loginpage> {
                 }
                 print('Notification permission: $statusLabel');
                 if (mounted) {
-                  setState(() {
-                    _permissionStatus = statusLabel;
-                  });
+                  // Aucun état supplémentaire à mettre à jour ici.
                 }
               },
               child: const Text('Autoriser'),
@@ -113,8 +107,7 @@ class _LoginpageState extends State<Loginpage> {
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey),
                 ),
-                const SizedBox(height: 30),
-                Text('Statut notifications : $_permissionStatus'),
+
                 const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
