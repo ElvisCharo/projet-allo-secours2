@@ -102,12 +102,19 @@ class Hospital extends StatelessWidget {
                 Future<void> _openMap() async {
                   final query =
                       '${hopital.replaceAll(' ', '+')},+${entry.key},+Bénin';
-                  final url =
-                      'https://www.google.com/maps/search/?api=1&query=$query';
-                  if (await canLaunchUrl(Uri.parse(url))) {
-                    await launchUrl(
-                      Uri.parse(url),
-                      mode: LaunchMode.externalApplication,
+                  final uri = Uri.parse(
+                    'https://www.google.com/maps/search/?api=1&query=$query',
+                  );
+                  if (!await launchUrl(
+                    uri,
+                    mode: LaunchMode.externalApplication,
+                  )) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Impossible d’ouvrir Google Maps. Vérifiez vos apps.',
+                        ),
+                      ),
                     );
                   }
                 }
