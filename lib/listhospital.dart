@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const Map<String, List<String>> hopitaux = {
   "Cotonou": [
@@ -98,16 +99,29 @@ class Hospital extends StatelessWidget {
               ),
 
               children: entry.value.map((hopital) {
+                Future<void> _openMap() async {
+                  final query =
+                      '${hopital.replaceAll(' ', '+')},+${entry.key},+Bénin';
+                  final url =
+                      'https://www.google.com/maps/search/?api=1&query=$query';
+                  if (await canLaunchUrl(Uri.parse(url))) {
+                    await launchUrl(
+                      Uri.parse(url),
+                      mode: LaunchMode.externalApplication,
+                    );
+                  }
+                }
+
                 return ListTile(
                   leading: const Icon(
                     Icons.local_hospital,
                     color: Colors.redAccent,
                   ),
                   title: Text(hopital),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 14,
-                    color: Colors.grey,
+                  onTap: _openMap,
+                  trailing: IconButton(
+                    icon: const Icon(Icons.map, color: Color(0xFF1565C0)),
+                    onPressed: _openMap,
                   ),
                 );
               }).toList(),

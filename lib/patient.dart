@@ -6,6 +6,7 @@ import 'package:allo_secours/notification_service.dart';
 import 'package:allo_secours/notifications_page.dart';
 import 'package:allo_secours/rdv.dart';
 import 'package:allo_secours/specialistes.dart';
+import 'package:allo_secours/profile.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
@@ -50,7 +51,7 @@ class _PatientState extends State<Patient> {
             message.data['body']?.toString() ??
             '';
 
-        if (notificationText.isNotEmpty) {
+        if (notificationText.isNotEmpty && mounted) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(notificationText)));
@@ -248,6 +249,15 @@ class _PatientState extends State<Patient> {
               context,
               MaterialPageRoute(builder: (_) => const Login()),
             );
+            return;
+          }
+
+          if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const Profile()),
+            );
+            setState(() => currentIndex = index);
             return;
           }
 
