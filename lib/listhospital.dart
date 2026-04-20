@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:io' show Platform;
 
 const Map<String, List<String>> hopitaux = {
   "Cotonou": [
@@ -102,9 +103,16 @@ class Hospital extends StatelessWidget {
                 Future<void> _openMap() async {
                   final query =
                       '${hopital.replaceAll(' ', '+')},+${entry.key},+Bénin';
-                  final uri = Uri.parse(
-                    'https://www.google.com/maps/search/?api=1&query=$query',
-                  );
+                  Uri uri;
+                  if (Platform.isAndroid || Platform.isIOS) {
+                    // Pour mobile : utiliser geo: pour ouvrir directement l'app Maps
+                    uri = Uri.parse('geo:0,0?q=$query');
+                  } else {
+                    // Pour PC/web : utiliser l'URL Google Maps
+                    uri = Uri.parse(
+                      'https://www.google.com/maps/search/?api=1&query=$query',
+                    );
+                  }
                   if (!await launchUrl(
                     uri,
                     mode: LaunchMode.externalApplication,
