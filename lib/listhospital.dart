@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:io' show Platform;
 
 const Map<String, List<String>> hopitaux = {
   "Cotonou": [
@@ -50,6 +49,35 @@ const Map<String, List<String>> hopitaux = {
 class Hospital extends StatelessWidget {
   const Hospital({super.key});
 
+  Future<void> _openMap(BuildContext context, String hopital, String ville) async {
+    final query = '${hopital.replaceAll(' ', '+')},+${ville},+Bénin';
+    final uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$query',
+    );
+
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible d’ouvrir Google Maps.'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _openNearbyHospitals(BuildContext context) async {
+    final uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=hôpital+près+de+moi',
+    );
+
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible d’ouvrir Google Maps.'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,12 +113,10 @@ class Hospital extends StatelessWidget {
               collapsedShape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-
               leading: const Icon(
                 Icons.location_city,
                 color: Color(0xFF1565C0),
               ),
-
               title: Text(
                 entry.key,
                 style: const TextStyle(
@@ -98,51 +124,31 @@ class Hospital extends StatelessWidget {
                   fontSize: 16,
                 ),
               ),
-
               children: entry.value.map((hopital) {
-                Future<void> _openMap() async {
-                  final query =
-                      '${hopital.replaceAll(' ', '+')},+${entry.key},+Bénin';
-                  Uri uri;
-                  if (Platform.isAndroid || Platform.isIOS) {
-                    // Pour mobile : utiliser geo: pour ouvrir directement l'app Maps
-                    uri = Uri.parse('geo:0,0?q=$query');
-                  } else {
-                    // Pour PC/web : utiliser l'URL Google Maps
-                    uri = Uri.parse(
-                      'https://www.google.com/maps/search/?api=1&query=$query',
-                    );
-                  }
-                  if (!await launchUrl(
-                    uri,
-                    mode: LaunchMode.externalApplication,
-                  )) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Impossible d’ouvrir Google Maps. Vérifiez vos apps.',
-                        ),
-                      ),
-                    );
-                  }
-                }
-
                 return ListTile(
                   leading: const Icon(
                     Icons.local_hospital,
                     color: Colors.redAccent,
                   ),
                   title: Text(hopital),
-                  onTap: _openMap,
+                  onTap: () => _openMap(context, hopital, entry.key),
                   trailing: IconButton(
                     icon: const Icon(Icons.map, color: Color(0xFF1565C0)),
-                    onPressed: _openMap,
+                    onPressed: () => _openMap(context, hopital, entry.key),
                   ),
                 );
               }).toList(),
             ),
           );
         }).toList(),
+      ),
+
+      // ✅ Bouton flottant "Près de moi"
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openNearbyHospitals(context),
+        backgroundColor: const Color(0xFF1565C0),
+        icon: const Icon(Icons.my_location, color: Colors.white),
+        label: const Text("Près de moi"),
       ),
     );
   }
