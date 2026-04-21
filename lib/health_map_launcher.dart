@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -11,18 +10,22 @@ class HealthMapLauncher {
     required String city,
   }) async {
     final messenger = ScaffoldMessenger.maybeOf(context);
-    final query = '$name, $city, Benin';
+    final normalizedCity = city == 'Autres villes' ? 'Benin' : city;
+    final query = '$name, $normalizedCity, Benin';
 
-    final launchTargets = <Uri>[
-      if (Platform.isAndroid) Uri.parse('geo:0,0?q=${Uri.encodeComponent(query)}'),
-      if (Platform.isIOS)
-        Uri.parse(
-          'http://maps.apple.com/?q=${Uri.encodeQueryComponent(query)}',
+    final launchTargets = <_LaunchTarget>[
+      ..._platformMapTargets(query),
+      _LaunchTarget(
+        uri: Uri.https(
+          'www.google.com',
+          '/maps/search/',
+          {'api': '1', 'query': query},
         ),
-      Uri.https(
-        'www.google.com',
-        '/maps/search/',
-        {'api': '1', 'query': query},
+        mode: LaunchMode.platformDefault,
+      ),
+      _LaunchTarget(
+        uri: Uri.https('maps.google.com', '/', {'q': query}),
+        mode: LaunchMode.platformDefault,
       ),
     ];
 
@@ -43,19 +46,20 @@ class HealthMapLauncher {
       final position = await _getCurrentPosition();
       final latLng = '${position.latitude},${position.longitude}';
 
-      final launchTargets = <Uri>[
-        if (Platform.isAndroid)
-          Uri.parse(
-            'geo:$latLng?q=${Uri.encodeComponent(category)}',
+      final nearbyQuery = '$category proche de moi';
+      final launchTargets = <_LaunchTarget>[
+        ..._platformNearbyTargets(latLng, category),
+        _LaunchTarget(
+          uri: Uri.https(
+            'www.google.com',
+            '/maps/search/',
+            {'api': '1', 'query': nearbyQuery},
           ),
-        if (Platform.isIOS)
-          Uri.parse(
-            'http://maps.apple.com/?ll=$latLng&q=${Uri.encodeQueryComponent(category)}',
-          ),
-        Uri.https(
-          'www.google.com',
-          '/maps/search/',
-          {'api': '1', 'query': '$category près de moi'},
+          mode: LaunchMode.platformDefault,
+        ),
+        _LaunchTarget(
+          uri: Uri.https('maps.google.com', '/', {'q': nearbyQuery}),
+          mode: LaunchMode.platformDefault,
         ),
       ];
 
@@ -108,16 +112,77 @@ class HealthMapLauncher {
 
   static Future<void> _launchFirstAvailable(
     ScaffoldMessengerState? messenger,
-    List<Uri> targets, {
+    List<_LaunchTarget> targets, {
     required String errorMessage,
   }) async {
-    for (final uri in targets) {
-      if (await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        return;
+    for (final target in targets) {
+      try {
+        if (await launchUrl(target.uri, mode: target.mode)) {
+          return;
+        }
+      } catch (_) {
+        continue;
       }
     }
 
     _showMessage(messenger, errorMessage);
+  }
+
+  static List<_LaunchTarget> _platformMapTargets(String query) {
+    if (kIsWeb) {
+      return const <_LaunchTarget>[];
+    }
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return <_LaunchTarget>[
+          _LaunchTarget(
+            uri: Uri.parse('geo:0,0?q=${Uri.encodeComponent(query)}'),
+            mode: LaunchMode.externalApplication,
+          ),
+        ];
+      case TargetPlatform.iOS:
+        return <_LaunchTarget>[
+          _LaunchTarget(
+            uri: Uri.parse(
+              'http://maps.apple.com/?q=${Uri.encodeQueryComponent(query)}',
+            ),
+            mode: LaunchMode.externalApplication,
+          ),
+        ];
+      default:
+        return const <_LaunchTarget>[];
+    }
+  }
+
+  static List<_LaunchTarget> _platformNearbyTargets(
+    String latLng,
+    String category,
+  ) {
+    if (kIsWeb) {
+      return const <_LaunchTarget>[];
+    }
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return <_LaunchTarget>[
+          _LaunchTarget(
+            uri: Uri.parse('geo:$latLng?q=${Uri.encodeComponent(category)}'),
+            mode: LaunchMode.externalApplication,
+          ),
+        ];
+      case TargetPlatform.iOS:
+        return <_LaunchTarget>[
+          _LaunchTarget(
+            uri: Uri.parse(
+              'http://maps.apple.com/?ll=$latLng&q=${Uri.encodeQueryComponent(category)}',
+            ),
+            mode: LaunchMode.externalApplication,
+          ),
+        ];
+      default:
+        return const <_LaunchTarget>[];
+    }
   }
 
   static void _showMessage(ScaffoldMessengerState? messenger, String message) {
@@ -129,4 +194,14 @@ class _LocationException implements Exception {
   const _LocationException(this.message);
 
   final String message;
+}
+
+class _LaunchTarget {
+  const _LaunchTarget({
+    required this.uri,
+    required this.mode,
+  });
+
+  final Uri uri;
+  final LaunchMode mode;
 }

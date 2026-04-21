@@ -1,6 +1,7 @@
 import 'package:allo_secours/login.dart';
 import 'package:allo_secours/register.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class Loginpage extends StatefulWidget {
@@ -16,6 +17,9 @@ class _LoginpageState extends State<Loginpage> {
   @override
   void initState() {
     super.initState();
+    if (kIsWeb) {
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_dialogShown && mounted) {
         _dialogShown = true;
