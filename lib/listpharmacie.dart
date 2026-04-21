@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+
+import 'health_map_launcher.dart';
 
 const Color pharmacyPrimaryColor = Color(0xFF1565C0);
 const Color pharmacySecondaryColor = Color(0xFF42A5F5);
@@ -44,20 +45,6 @@ const Map<String, List<String>> pharmacies = {
 class Pharmacie extends StatelessWidget {
   const Pharmacie({super.key});
 
-  Future<void> _openNearbyPharmacies(BuildContext context) async {
-    final uri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=pharmacie+près+de+moi',
-    );
-
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Impossible d’ouvrir Google Maps.'),
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,7 +67,7 @@ class Pharmacie extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -102,29 +89,21 @@ class Pharmacie extends StatelessWidget {
                 ),
               ),
               children: entry.value.map((pharmacy) {
-                Future<void> _openMap() async {
-                  final query =
-                      '${pharmacy.replaceAll(' ', '+')},+${entry.key},+Bénin';
-                  final uri = Uri.parse(
-                    'https://www.google.com/maps/search/?api=1&query=$query',
-                  );
-
-                  if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Impossible d’ouvrir Google Maps.'),
-                      ),
-                    );
-                  }
-                }
-
                 return ListTile(
                   leading: const Icon(Icons.local_pharmacy, color: Colors.green),
                   title: Text(pharmacy),
-                  onTap: _openMap,
+                  onTap: () => HealthMapLauncher.openPlace(
+                    context,
+                    name: pharmacy,
+                    city: entry.key,
+                  ),
                   trailing: IconButton(
                     icon: const Icon(Icons.map, color: pharmacyPrimaryColor),
-                    onPressed: _openMap,
+                    onPressed: () => HealthMapLauncher.openPlace(
+                      context,
+                      name: pharmacy,
+                      city: entry.key,
+                    ),
                   ),
                 );
               }).toList(),
@@ -135,7 +114,10 @@ class Pharmacie extends StatelessWidget {
 
       // ✅ FAB pour "Pharmacie près de moi"
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openNearbyPharmacies(context),
+        onPressed: () => HealthMapLauncher.openNearbyCategory(
+          context,
+          category: 'pharmacie',
+        ),
         backgroundColor: pharmacyPrimaryColor,
         icon: const Icon(Icons.my_location, color: Colors.white),
         label: const Text("Près de moi"),

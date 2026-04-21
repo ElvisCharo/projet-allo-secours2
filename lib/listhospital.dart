@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+
+import 'health_map_launcher.dart';
 
 const Map<String, List<String>> hopitaux = {
   "Cotonou": [
@@ -49,35 +50,6 @@ const Map<String, List<String>> hopitaux = {
 class Hospital extends StatelessWidget {
   const Hospital({super.key});
 
-  Future<void> _openMap(BuildContext context, String hopital, String ville) async {
-    final query = '${hopital.replaceAll(' ', '+')},+${ville},+Bénin';
-    final uri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=$query',
-    );
-
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Impossible d’ouvrir Google Maps.'),
-        ),
-      );
-    }
-  }
-
-  Future<void> _openNearbyHospitals(BuildContext context) async {
-    final uri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=hôpital+près+de+moi',
-    );
-
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Impossible d’ouvrir Google Maps.'),
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,7 +72,7 @@ class Hospital extends StatelessWidget {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -131,10 +103,18 @@ class Hospital extends StatelessWidget {
                     color: Colors.redAccent,
                   ),
                   title: Text(hopital),
-                  onTap: () => _openMap(context, hopital, entry.key),
+                  onTap: () => HealthMapLauncher.openPlace(
+                    context,
+                    name: hopital,
+                    city: entry.key,
+                  ),
                   trailing: IconButton(
                     icon: const Icon(Icons.map, color: Color(0xFF1565C0)),
-                    onPressed: () => _openMap(context, hopital, entry.key),
+                    onPressed: () => HealthMapLauncher.openPlace(
+                      context,
+                      name: hopital,
+                      city: entry.key,
+                    ),
                   ),
                 );
               }).toList(),
@@ -145,7 +125,10 @@ class Hospital extends StatelessWidget {
 
       // ✅ Bouton flottant "Près de moi"
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openNearbyHospitals(context),
+        onPressed: () => HealthMapLauncher.openNearbyCategory(
+          context,
+          category: 'hopital',
+        ),
         backgroundColor: const Color(0xFF1565C0),
         icon: const Icon(Icons.my_location, color: Colors.white),
         label: const Text("Près de moi"),
